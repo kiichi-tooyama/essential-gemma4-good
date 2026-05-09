@@ -1,0 +1,1 @@
+void essential_sdk_dart_link_anchor(void) {}
