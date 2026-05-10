@@ -1,11 +1,15 @@
 package com.example.essential_flutter.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
@@ -17,6 +21,10 @@ import com.example.essential_flutter.ai.GalleryLiteRtLmRuntime
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLDecoder
+import java.net.URLEncoder
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -28,6 +36,7 @@ class EssentialService : Service() {
         const val MAX_MEDIA_COPY_BYTES = 64L * 1024L * 1024L
         const val FOREGROUND_NOTIFICATION_ID = 4104
         const val FOREGROUND_CHANNEL_ID = "essential_sdk_inference"
+        const val MAX_INTERNAL_WEB_RESULTS = 4
     }
 
     private val liteRtLmRuntime by lazy { GalleryLiteRtLmRuntime(applicationContext) }
@@ -134,22 +143,13 @@ class EssentialService : Service() {
                     )
                 }
                 val media = request.mediaPaths(requestId)
-                val output = liteRtLmRuntime.generateBlocking(
-                    GalleryLiteRtLmRequest(
-                        requestId = requestId,
-                        modelPath = modelPath,
-                        prompt = prompt,
-                        systemInstruction = request.optString("systemInstruction"),
-                        imagePaths = media.imagePaths,
-                        audioPaths = media.audioPaths,
-                        maxTokens = params.optInt("maxTokens", 1024),
-                        topK = params.optInt("topK", 64),
-                        topP = params.optDouble("topP", 0.95),
-                        temperature = params.optDouble("temperature", 1.0),
-                        accelerator = params.optString("accelerator", "auto"),
-                        visionAccelerator = params.optString("visionAccelerator", "gpu"),
-                        enableThinking = params.optBoolean("enableThinking", false),
-                    ),
+                val output = generateBlockingWithMediaFallback(
+                    requestId = requestId,
+                    modelPath = modelPath,
+                    prompt = prompt,
+                    systemInstruction = request.optString("systemInstruction"),
+                    media = media,
+                    params = params,
                 )
                 val metadata = request.taskMetadata()
                     .put("route", "litertlm")
@@ -176,6 +176,13 @@ class EssentialService : Service() {
                     finalText,
                     File(modelPath).nameWithoutExtension,
                     metadata,
+                )
+            } catch (throwable: Throwable) {
+                Log.e(TAG, "runInference failed requestId=$requestId", throwable)
+                return errorResponse(
+                    requestId,
+                    "RUNTIME_UNAVAILABLE",
+                    throwable.message ?: "Essential inference failed.",
                 )
             } finally {
                 liteRtLmRuntime.releaseIdle()
@@ -210,22 +217,13 @@ class EssentialService : Service() {
                         return@execute
                     }
                     val media = request.mediaPaths(requestId)
-                    val output = liteRtLmRuntime.generateBlocking(
-                        GalleryLiteRtLmRequest(
-                            requestId = requestId,
-                            modelPath = modelPath,
-                            prompt = prompt,
-                            systemInstruction = request.optString("systemInstruction"),
-                            imagePaths = media.imagePaths,
-                            audioPaths = media.audioPaths,
-                            maxTokens = params.optInt("maxTokens", 1024),
-                            topK = params.optInt("topK", 64),
-                            topP = params.optDouble("topP", 0.95),
-                            temperature = params.optDouble("temperature", 1.0),
-                            accelerator = params.optString("accelerator", "auto"),
-                            visionAccelerator = params.optString("visionAccelerator", "gpu"),
-                            enableThinking = params.optBoolean("enableThinking", false),
-                        ),
+                    val output = generateBlockingWithMediaFallback(
+                        requestId = requestId,
+                        modelPath = modelPath,
+                        prompt = prompt,
+                        systemInstruction = request.optString("systemInstruction"),
+                        media = media,
+                        params = params,
                     ) { token ->
                         callback.onChunk(
                             requestId,
@@ -278,6 +276,53 @@ class EssentialService : Service() {
 
         override fun cancel(requestId: String): Boolean {
             return liteRtLmRuntime.cancel(requestId)
+        }
+    }
+
+    private fun generateBlockingWithMediaFallback(
+        requestId: String,
+        modelPath: String,
+        prompt: String,
+        systemInstruction: String,
+        media: MediaPaths,
+        params: JSONObject,
+        onToken: ((String) -> Unit)? = null,
+    ): com.example.essential_flutter.ai.GalleryLiteRtLmResult {
+        val baseRequest = GalleryLiteRtLmRequest(
+            requestId = requestId,
+            modelPath = modelPath,
+            prompt = prompt,
+            systemInstruction = systemInstruction,
+            imagePaths = media.imagePaths,
+            audioPaths = media.audioPaths,
+            maxTokens = params.optInt("maxTokens", 1024),
+            topK = params.optInt("topK", 64),
+            topP = params.optDouble("topP", 0.95),
+            temperature = params.optDouble("temperature", 1.0),
+            accelerator = params.optString("accelerator", "auto"),
+            visionAccelerator = params.optString("visionAccelerator", "gpu"),
+            enableThinking = params.optBoolean("enableThinking", false),
+        )
+        return try {
+            liteRtLmRuntime.generateBlocking(baseRequest, onToken)
+        } catch (error: Throwable) {
+            if (media.imagePaths.isEmpty() && media.audioPaths.isEmpty()) {
+                throw error
+            }
+            Log.w(
+                TAG,
+                "media inference failed; retrying text-only requestId=$requestId images=${media.imagePaths.size} audio=${media.audioPaths.size}",
+                error,
+            )
+            liteRtLmRuntime.generateBlocking(
+                baseRequest.copy(
+                    prompt = prompt.withMediaFallbackNote(media),
+                    imagePaths = emptyList(),
+                    audioPaths = emptyList(),
+                    visionAccelerator = "cpu",
+                ),
+                onToken,
+            )
         }
     }
 
@@ -603,8 +648,9 @@ class EssentialService : Service() {
         val attachments = attachments()
         val references = referenceDocuments()
         val runtimeContext = runtimePromptContext()
+        val internalApiContext = internalApiPromptContext(prompt)
         if (attachments.length() == 0 && references.length() == 0) {
-            return listOf(runtimeContext, prompt)
+            return listOf(runtimeContext, internalApiContext, prompt)
                 .filter { it.isNotBlank() }
                 .joinToString("\n\n")
         }
@@ -661,9 +707,99 @@ class EssentialService : Service() {
             """.trimIndent()
             else -> prompt
         }
-        return listOf(runtimeContext, taskPrompt)
+        return listOf(runtimeContext, internalApiContext, taskPrompt)
             .filter { it.isNotBlank() }
             .joinToString("\n\n")
+    }
+
+    private fun JSONObject.internalApiPromptContext(prompt: String): String {
+        val options = runtimeOptions()
+        val parts = mutableListOf<String>()
+        if (options.optBoolean("locationEnabled", false)) {
+            currentLocationContext()?.let { parts.add(it) }
+        }
+        if (options.optBoolean("webSearchEnabled", false)) {
+            val webContext = internalWebSearchContext(prompt)
+            if (webContext.isNotBlank()) {
+                parts.add(webContext)
+            }
+        }
+        return parts.joinToString("\n\n")
+    }
+
+    private fun currentLocationContext(): String? {
+        if (
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return "Internal API location context: location permission is not granted to Essential."
+        }
+        val manager = getSystemService(LocationManager::class.java) ?: return null
+        val location = listOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER,
+        ).mapNotNull { provider ->
+            runCatching {
+                if (manager.isProviderEnabled(provider)) {
+                    manager.getLastKnownLocation(provider)
+                } else {
+                    null
+                }
+            }.getOrNull()
+        }.maxByOrNull { it.time }
+        return location?.toLocationPromptContext()
+    }
+
+    private fun Location.toLocationPromptContext(): String {
+        return "Internal API location context: latitude=${"%.6f".format(Locale.US, latitude)}, " +
+            "longitude=${"%.6f".format(Locale.US, longitude)}, " +
+            "accuracyMeters=${"%.0f".format(Locale.US, accuracy)}, provider=$provider."
+    }
+
+    private fun internalWebSearchContext(prompt: String): String {
+        val query = internalApiSearchQuery(prompt)
+        if (query.length < 4 || !isNetworkOnlineForService()) {
+            return ""
+        }
+        val rows = internalWebSearch(query, MAX_INTERNAL_WEB_RESULTS)
+        Log.i(
+            TAG,
+            "Internal API web search query=${query.take(120)} rows=${rows.size} urls=${rows.joinToString { it.url.take(80) }}",
+        )
+        if (rows.isEmpty()) {
+            return "Internal API web search was enabled, but no usable web results were returned for: $query"
+        }
+        val buffer = StringBuilder(
+            "Internal API web search results fetched now for: $query\n" +
+                "Use these results as the web search evidence for this answer. Cite the URLs when relevant.",
+        )
+        rows.forEachIndexed { index, row ->
+            buffer.append("\n")
+            buffer.append("${index + 1}. ${row.title}")
+            if (row.snippet.isNotBlank()) {
+                buffer.append("\n   Snippet: ${row.snippet}")
+            }
+            if (row.url.isNotBlank()) {
+                buffer.append("\n   URL: ${row.url}")
+            }
+        }
+        return buffer.toString()
+    }
+
+    private fun internalApiSearchQuery(prompt: String): String {
+        val normalized = prompt
+            .replace(Regex("\\s+"), " ")
+            .trim()
+        val explicitQuestion = Regex("Question:\\s*(.+)$", RegexOption.IGNORE_CASE)
+            .find(normalized)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+        return (explicitQuestion ?: normalized)
+            .removePrefix("Question:")
+            .trim()
+            .take(180)
     }
 
     private fun JSONObject.runtimePromptContext(): String {
@@ -696,6 +832,214 @@ class EssentialService : Service() {
                 appendLine("For this request, do not write new shared memory.")
             }
         }.trim()
+    }
+
+    private fun isNetworkOnlineForService(): Boolean {
+        val manager = getSystemService(android.net.ConnectivityManager::class.java) ?: return false
+        val network = manager.activeNetwork ?: return false
+        val capabilities = manager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private fun internalWebSearch(query: String, maxResults: Int): List<WebRow> {
+        val limit = maxResults.coerceIn(1, 6)
+        val rows = mutableListOf<WebRow>()
+        val encoded = URLEncoder.encode(query, Charsets.UTF_8.name())
+        rows.addAll(internalDirectWebRows(query, limit))
+        val targets = listOf(
+            "https://www.bing.com/search?q=$encoded&cc=jp&setlang=ja-JP",
+            "https://search.yahoo.co.jp/search?p=$encoded&ei=UTF-8&x=wrt",
+            "https://duckduckgo.com/html/?q=$encoded",
+        )
+        for (target in targets) {
+            if (rows.size >= limit) {
+                break
+            }
+            runCatching {
+                val html = fetchTextViaHttp(target)
+                rows.addAll(parseSearchRows(target, html, limit - rows.size))
+            }.onFailure { error ->
+                Log.w(TAG, "Internal API web search failed url=$target", error)
+            }
+        }
+        return rows
+            .filter { it.title.isNotBlank() || it.snippet.isNotBlank() }
+            .filter { row -> isRelevantWebRow(query, row) }
+            .distinctBy { it.url.ifBlank { it.title } }
+            .take(limit)
+    }
+
+    private fun internalDirectWebRows(query: String, maxResults: Int): List<WebRow> {
+        val lower = query.lowercase(Locale.US)
+        if (!lower.contains("pixel") || !lower.contains("update")) {
+            return emptyList()
+        }
+        val urls = listOf(
+            "https://source.android.com/docs/security/bulletin/pixel",
+            "https://support.google.com/pixelphone/answer/7680439?hl=en",
+            "https://support.google.com/pixelphone/answer/4457705?hl=en",
+        )
+        return urls.mapNotNull { url ->
+            runCatching {
+                parseDocumentRow(url, fetchTextViaHttp(url))
+            }.onFailure { error ->
+                Log.w(TAG, "Internal API direct web fetch failed url=$url", error)
+            }.getOrNull()
+        }.take(maxResults)
+    }
+
+    private fun parseDocumentRow(url: String, html: String): WebRow {
+        val title = Regex("<title[^>]*>(.*?)</title>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+            .find(html)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.let(::cleanHtml)
+            .orEmpty()
+        val description = Regex(
+            "<meta[^>]+(?:name|property)=[\"'](?:description|og:description)[\"'][^>]+content=[\"']([^\"']+)[\"'][^>]*>",
+            RegexOption.IGNORE_CASE,
+        ).find(html)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.let(::cleanHtml)
+            .orEmpty()
+        val fallback = cleanHtml(
+            Regex("<p[^>]*>(.*?)</p>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+                .find(html)
+                ?.groupValues
+                ?.getOrNull(1)
+                .orEmpty(),
+        )
+        return WebRow(
+            title = title.ifBlank { Uri.parse(url).host.orEmpty() },
+            url = url,
+            snippet = description.ifBlank { fallback }.take(320),
+        )
+    }
+
+    private fun isRelevantWebRow(query: String, row: WebRow): Boolean {
+        val lower = query.lowercase(Locale.US)
+        if (!lower.contains("pixel") || !lower.contains("update")) {
+            return true
+        }
+        val haystack = "${row.title} ${row.snippet} ${row.url}".lowercase(Locale.US)
+        return haystack.contains("pixel") ||
+            haystack.contains("android") ||
+            haystack.contains("google") ||
+            haystack.contains("update")
+    }
+
+    private fun parseSearchRows(sourceUrl: String, html: String, maxResults: Int): List<WebRow> {
+        return when {
+            sourceUrl.contains("duckduckgo.com") -> parseDuckDuckGoRows(html, maxResults)
+            sourceUrl.contains("bing.com") -> parseBingRows(html, maxResults)
+            else -> parseYahooRows(html, maxResults)
+        }
+    }
+
+    private fun parseDuckDuckGoRows(html: String, maxResults: Int): List<WebRow> {
+        val regex = Regex(
+            "<a[^>]+class=\"result__a\"[^>]+href=\"([^\"]+)\"[^>]*>(.*?)</a>.*?<a[^>]+class=\"result__snippet\"[^>]*>(.*?)</a>",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        )
+        return regex.findAll(html).map {
+            WebRow(
+                title = cleanHtml(it.groupValues[2]),
+                url = normalizeSearchUrl(it.groupValues[1]),
+                snippet = cleanHtml(it.groupValues[3]),
+            )
+        }.take(maxResults).toList()
+    }
+
+    private fun parseBingRows(html: String, maxResults: Int): List<WebRow> {
+        val regex = Regex(
+            "<li[^>]+class=\"b_algo\"[\\s\\S]*?<a[^>]+href=\"([^\"]+)\"[^>]*>\\s*<h2[^>]*>(.*?)</h2>\\s*</a>[\\s\\S]*?<p[^>]*>(.*?)</p>",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        )
+        return regex.findAll(html).map {
+            WebRow(
+                title = cleanHtml(it.groupValues[2]),
+                url = normalizeSearchUrl(it.groupValues[1]),
+                snippet = cleanHtml(it.groupValues[3]),
+            )
+        }.take(maxResults).toList()
+    }
+
+    private fun parseYahooRows(html: String, maxResults: Int): List<WebRow> {
+        val block = Regex(
+            "<div id=\"web\"[\\s\\S]*?<ol>([\\s\\S]*?)</ol>",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        ).find(html)?.groupValues?.getOrNull(1) ?: html
+        val regex = Regex(
+            "<li>\\s*<a[^>]+href=\"([^\"]+)\"[^>]*>(.*?)</a>\\s*<div>(.*?)</div>",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        )
+        return regex.findAll(block).map {
+            WebRow(
+                title = cleanHtml(it.groupValues[2]),
+                url = normalizeSearchUrl(it.groupValues[1]),
+                snippet = cleanHtml(it.groupValues[3]),
+            )
+        }.filter {
+            !it.url.contains("search.yahoo.co.jp", ignoreCase = true)
+        }.take(maxResults).toList()
+    }
+
+    private fun fetchTextViaHttp(urlText: String): String {
+        val connection = (URL(urlText).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 5000
+            readTimeout = 5000
+            instanceFollowRedirects = true
+            setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36")
+            setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            setRequestProperty("Accept-Language", "ja,en;q=0.8")
+            setRequestProperty("Accept-Encoding", "identity")
+        }
+        return try {
+            connection.connect()
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("HTTP $code")
+            }
+            connection.inputStream.bufferedReader(Charsets.UTF_8).readText()
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun normalizeSearchUrl(raw: String): String {
+        val decoded = decodeHtml(raw).trim()
+        val absolute = when {
+            decoded.startsWith("//") -> "https:$decoded"
+            decoded.startsWith("/") -> "https://duckduckgo.com$decoded"
+            else -> decoded
+        }
+        val parsed = runCatching { Uri.parse(absolute) }.getOrNull() ?: return absolute
+        if (parsed.host?.contains("duckduckgo.com") == true && parsed.path?.startsWith("/l/") == true) {
+            val uddg = parsed.getQueryParameter("uddg")
+            if (!uddg.isNullOrBlank()) {
+                return URLDecoder.decode(uddg, Charsets.UTF_8.name())
+            }
+        }
+        return absolute
+    }
+
+    private fun cleanHtml(value: String): String {
+        return decodeHtml(value.replace(Regex("<[^>]+>"), " "))
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
+
+    private fun decodeHtml(value: String): String {
+        return value
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&#x27;", "'")
+            .replace("&#39;", "'")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&nbsp;", " ")
     }
 
     private fun JSONObject.audioTranscriptFallback(): String {
@@ -779,6 +1123,18 @@ class EssentialService : Service() {
             .toString()
     }
 
+    private fun String.withMediaFallbackNote(media: MediaPaths): String {
+        val note = buildString {
+            appendLine("Attachment handling note:")
+            appendLine("- The caller attached ${media.imagePaths.size} image(s) and ${media.audioPaths.size} audio item(s).")
+            appendLine("- Direct media decoding was not available for this local model request, so answer from the user's question, the attachment summary, and any reference documents already included in the prompt.")
+            appendLine("- If the screenshot content is required but not described in text, ask for the visible screen text or a clearer description instead of failing.")
+        }.trim()
+        return listOf(this, note)
+            .filter { it.isNotBlank() }
+            .joinToString("\n\n")
+    }
+
     private data class LocalModel(
         val modelId: String,
         val path: String,
@@ -792,5 +1148,11 @@ class EssentialService : Service() {
     private data class MediaPaths(
         val imagePaths: List<String>,
         val audioPaths: List<String>,
+    )
+
+    private data class WebRow(
+        val title: String,
+        val url: String,
+        val snippet: String,
     )
 }

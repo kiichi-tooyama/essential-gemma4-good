@@ -27,6 +27,8 @@ android/local.properties
 *.onnx
 *.litertlm
 models/
+!native/runtimes/llama/llama.cpp/src/models/
+!native/runtimes/llama/llama.cpp/src/models/**
 essential_models/
 
 # Logs and local environment

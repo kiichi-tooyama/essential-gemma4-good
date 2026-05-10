@@ -1,7 +1,26 @@
-Copyright (c) 2026 Essential
+Creative Commons Attribution 4.0 International
 
-Permission is granted to review, run, and modify this project for hackathon
-evaluation and demonstration purposes.
+SPDX-License-Identifier: CC-BY-4.0
 
-Third-party components included under `native/` and `third_party/` are governed
-by their original licenses.
+Copyright (c) 2026 Kiichi Toyama
+
+This repository's original Essential source code, documentation, demos, and
+project materials are licensed under the Creative Commons Attribution 4.0
+International Public License (CC BY 4.0).
+
+You are free to share and adapt the licensed material for any purpose, including
+commercial use, provided that appropriate attribution is given, a link to the
+license is provided, and changes are indicated.
+
+License text:
+https://creativecommons.org/licenses/by/4.0/
+
+Reference:
+https://opensource.org/licenses/CC-BY-4.0
+
+Third-party code, SDKs, models, datasets, media assets, generated binaries, and
+bundled dependencies remain under their own licenses and terms. This license
+does not relicense Google Gemma model files, LiteRT / Google AI Edge components,
+Flutter, Android SDK components, whisper.cpp, llama.cpp, Vulkan / SPIR-V
+dependencies, MeloTTS assets, Hugging Face hosted model files, or any other
+third-party material included for compatibility, testing, or demonstration.
