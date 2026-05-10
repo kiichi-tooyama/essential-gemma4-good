@@ -152,6 +152,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
           sliver: SliverToBoxAdapter(
             child: _SearchPanel(
               controller: _searchController,
+              strings: widget.controller.strings,
               query: _searchQuery,
               results: searchResults,
               onChanged: (value) => setState(() => _searchQuery = value),
@@ -543,7 +544,7 @@ class _AudioPanelState extends State<_AudioPanel> {
             ),
             if (_error.isNotEmpty)
               Text(
-                '音声を読み込めませんでした: $_error',
+                'Could not load audio: $_error',
                 style: TextStyle(color: colorScheme.error),
               ),
           ],
@@ -597,6 +598,7 @@ class _TopicTimeline extends StatelessWidget {
 class _SearchPanel extends StatelessWidget {
   const _SearchPanel({
     required this.controller,
+    required this.strings,
     required this.query,
     required this.results,
     required this.onChanged,
@@ -604,6 +606,7 @@ class _SearchPanel extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final AppLanguagePack strings;
   final String query;
   final List<MeetingSearchResult> results;
   final ValueChanged<String> onChanged;
@@ -619,7 +622,7 @@ class _SearchPanel extends StatelessWidget {
           onChanged: onChanged,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.search_rounded),
-            hintText: context.appText('録音内を検索', 'Search in recording'),
+            hintText: strings.t('meeting.searchInRecording'),
             border: OutlineInputBorder(),
           ),
         ),
@@ -627,7 +630,7 @@ class _SearchPanel extends StatelessWidget {
           const SizedBox(height: 10),
           if (results.isEmpty)
             Text(
-              context.appText('該当する発言はありません', 'No matching statements'),
+              strings.t('meeting.searchNoUtterance'),
               style: Theme.of(context).textTheme.bodySmall,
             )
           else
@@ -669,7 +672,13 @@ class _TemplateChooser extends StatelessWidget {
               for (final template in MeetingTextProcessor.templates)
                 DropdownMenuItem<String>(
                   value: template.id,
-                  child: Text(template.title),
+                  child: Text(
+                    _localizedTemplateTitle(
+                      template.id,
+                      template.title,
+                      context,
+                    ),
+                  ),
                 ),
             ],
             onChanged: (value) {
@@ -751,16 +760,14 @@ class _SentimentPanel extends StatelessWidget {
                   value: sentiment.motivation,
                 ),
                 _MetricBar(
-                  label: context.appText('懸念', 'Concerns'),
+                  label: context.appText('懸念', 'Concern'),
                   value: sentiment.concern,
                 ),
-                if (sentiment.summary.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    sentiment.summary,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                const SizedBox(height: 8),
+                Text(
+                  _localizedSentimentSummary(sentiment, context),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -808,7 +815,7 @@ class _Bookmarks extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _sectionTitle(context, '重要マーク'),
+        _sectionTitle(context, context.appText('重要マーク', 'Bookmarks')),
         for (final bookmark in session.bookmarks)
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -854,7 +861,7 @@ class _NoteSetsState extends State<_NoteSets> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle(context, 'ノート'),
+        _sectionTitle(context, context.appText('ノート', 'Notes')),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -863,7 +870,12 @@ class _NoteSetsState extends State<_NoteSets> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(widget.session.noteSets[i].title),
+                    label: Text(
+                      _localizedMeetingLabel(
+                        widget.session.noteSets[i].title,
+                        context,
+                      ),
+                    ),
                     selected: i == _selectedIndex,
                     onSelected: (_) => setState(() => _selectedIndex = i),
                   ),
@@ -882,7 +894,9 @@ class _NoteSetsState extends State<_NoteSets> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(14),
-            child: SelectableText(_cleanDisplayText(selected.body)),
+            child: SelectableText(
+              _cleanDisplayText(_localizedMeetingText(selected.body, context)),
+            ),
           ),
         ),
       ],
@@ -904,7 +918,7 @@ class _AskSuggestions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle(context, 'Ask候補'),
+        _sectionTitle(context, context.appText('AIに聞けること', 'Ask AI')),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -1048,7 +1062,10 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
     final root = widget.nodes.isEmpty
         ? MeetingMindMapNode(label: context.appText('会議', 'Meeting'))
         : widget.nodes.first;
-    final layout = _MindMapLayout.build(root, widget.nodes);
+    final displayRoot = _mindMapDisplayRoot(root, context);
+    final layout = _MindMapLayout.build(displayRoot, <MeetingMindMapNode>[
+      displayRoot,
+    ]);
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportSize = Size(
@@ -1081,18 +1098,24 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
                     child: AnimatedBuilder(
                       animation: _transform,
                       builder: (context, child) {
-                        return Transform(
-                          transform: _transform.value,
+                        return OverflowBox(
                           alignment: Alignment.topLeft,
-                          child: child,
+                          minWidth: layout.size.width,
+                          maxWidth: layout.size.width,
+                          minHeight: layout.size.height,
+                          maxHeight: layout.size.height,
+                          child: Transform(
+                            transform: _transform.value,
+                            alignment: Alignment.topLeft,
+                            child: child,
+                          ),
                         );
                       },
-                      child: CustomPaint(
-                        size: layout.size,
-                        painter: _MindMapPainter(layout.edges),
-                        child: SizedBox(
-                          width: layout.size.width,
-                          height: layout.size.height,
+                      child: SizedBox(
+                        width: layout.size.width,
+                        height: layout.size.height,
+                        child: CustomPaint(
+                          painter: _MindMapPainter(layout.edges),
                           child: Stack(
                             children: [
                               for (final node in layout.nodes)
@@ -1149,6 +1172,55 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
     );
   }
 
+  MeetingMindMapNode _mindMapDisplayRoot(
+    MeetingMindMapNode root,
+    BuildContext context,
+  ) {
+    MeetingMindMapNode normalize(MeetingMindMapNode node, int depth) {
+      if (depth >= 2) {
+        final label = _joinedMindMapLabel(node, context);
+        return MeetingMindMapNode(
+          id: node.id,
+          label: label,
+          summary: node.summary,
+          startSeconds: node.startSeconds,
+        );
+      }
+      final children = node.children
+          .map((child) => normalize(child, depth + 1))
+          .where((child) => _mindMapNodeLabel(child, context).trim().isNotEmpty)
+          .toList(growable: false);
+      return MeetingMindMapNode(
+        id: node.id,
+        label: node.label,
+        summary: node.summary,
+        startSeconds: node.startSeconds,
+        children: children,
+      );
+    }
+
+    return normalize(root, 0);
+  }
+
+  String _joinedMindMapLabel(MeetingMindMapNode node, BuildContext context) {
+    final parts = <String>[];
+    void collect(MeetingMindMapNode current) {
+      final label = _mindMapNodeLabel(current, context).trim();
+      if (label.isNotEmpty && !parts.contains(label)) {
+        parts.add(label);
+      }
+      for (final child in current.children) {
+        collect(child);
+      }
+    }
+
+    collect(node);
+    if (parts.isEmpty) {
+      return context.appText('項目', 'Item');
+    }
+    return _takeTextRunes(parts.join(' / '), 72);
+  }
+
   Widget _nodeChip(MeetingMindMapNode node, Offset offset, bool primary) {
     final colorScheme = Theme.of(context).colorScheme;
     final nodeSize = _MindMapLayout.nodeSizeForDepth(primary ? 0 : 1);
@@ -1156,7 +1228,7 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
     final foreground = primary
         ? colorScheme.onPrimaryContainer
         : const Color(0xFF202126);
-    final label = _mindMapNodeLabel(node);
+    final label = _mindMapNodeLabel(node, context);
     return Positioned(
       left: offset.dx,
       top: offset.dy,
@@ -1280,7 +1352,9 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
 
   void _applyScale(double factor, Offset focalPoint) {
     final currentScale = _transform.value.getMaxScaleOnAxis();
-    final targetScale = (currentScale * factor).clamp(0.28, 4.0);
+    final targetScale = (currentScale * factor)
+        .clamp(_minimumScale(), 4.0)
+        .toDouble();
     final effectiveFactor = targetScale / currentScale;
     if (!effectiveFactor.isFinite || (effectiveFactor - 1).abs() < 0.001) {
       return;
@@ -1290,6 +1364,10 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
       ..scaleByDouble(effectiveFactor, effectiveFactor, 1, 1)
       ..translateByDouble(-focalPoint.dx, -focalPoint.dy, 0, 1)
       ..multiply(_transform.value);
+  }
+
+  double _minimumScale() {
+    return widget.initialFit == _MindMapInitialFit.overview ? 0.44 : 0.58;
   }
 
   void _scheduleFitIfNeeded(
@@ -1326,10 +1404,11 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
   }
 
   void _fitToView(Size layoutSize, Size viewportSize) {
-    final scale = (math.min(
+    final fitScale = math.min(
       viewportSize.width / (layoutSize.width + 48),
       viewportSize.height / (layoutSize.height + 48),
-    )).clamp(0.28, 1.2);
+    );
+    final scale = fitScale.clamp(_minimumScale(), 1.2).toDouble();
     final dx = (viewportSize.width - layoutSize.width * scale) / 2;
     final dy = (viewportSize.height - layoutSize.height * scale) / 2;
     _transform.value = Matrix4.identity()
@@ -1344,13 +1423,17 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
   ) {
     final visibleRightEdge = nodes
         .where((node) => node.depth <= 1)
-        .map((node) => node.offset.dx + _MindMapLayout.nodeSizeForDepth(node.depth).width)
+        .map(
+          (node) =>
+              node.offset.dx +
+              _MindMapLayout.nodeSizeForDepth(node.depth).width,
+        )
         .fold<double>(0, math.max);
     final readableWidth = math.max(visibleRightEdge + 32, 420);
     final scale = (math.min(
       viewportSize.width / readableWidth,
       viewportSize.height / math.min(layoutSize.height + 32, 620),
-    )).clamp(0.62, 1.08);
+    )).clamp(0.92, 1.18);
     _MindMapLayoutNode? root;
     for (final node in nodes) {
       if (node.depth == 0) {
@@ -1360,7 +1443,7 @@ class _MindMapCanvasState extends State<_MindMapCanvas> {
     }
     final focus = root?.offset ?? const Offset(88, 84);
     final dx = math.max(12.0, 18 - focus.dx * scale);
-    final dy = math.max(18.0, viewportSize.height * 0.36 - focus.dy * scale);
+    final dy = math.max(18.0, viewportSize.height * 0.22 - focus.dy * scale);
     _transform.value = Matrix4.identity()
       ..translateByDouble(dx, dy, 0, 1)
       ..scaleByDouble(scale, scale, 1, 1);
@@ -2166,6 +2249,226 @@ String _cleanDisplayText(String text) {
       .trim();
 }
 
+String _localizedTemplateTitle(
+  String id,
+  String fallback,
+  BuildContext context,
+) {
+  final english = switch (id) {
+    'meeting_minutes' => 'Meeting minutes',
+    'todo_only' => 'Action items',
+    'decision_log' => 'Decision log',
+    'customer_research' => 'Customer research',
+    'one_on_one' => 'One-on-one',
+    'recruiting' => 'Recruiting',
+    'book' => 'Book notes',
+    'medical' => 'Medical notes',
+    'project' => 'Project notes',
+    'spec_review' => 'Spec review',
+    'code_review' => 'Code review',
+    'incident' => 'Incident report',
+    'daily' => 'Daily standup',
+    'weekly' => 'Weekly review',
+    'business_report' => 'Business report',
+    'user_test' => 'User test',
+    'decisions_only' => 'Decisions',
+    'risk' => 'Risk analysis',
+    'faq' => 'FAQ',
+    'keyword' => 'Keyword focus',
+    'chronological' => 'Chronological summary',
+    'speaker' => 'Speaker summary',
+    'sentiment' => 'Sentiment analysis',
+    'motivation' => 'Motivation analysis',
+    'opposition' => 'Opposing views',
+    'brief' => 'Brief summary',
+    'detailed' => 'Detailed notes',
+    'share_email' => 'Share email',
+    'social' => 'Short share text',
+    'press' => 'Press brief',
+    'product' => 'Product notes',
+    'sales' => 'Sales notes',
+    'support' => 'Support log',
+    'engineering' => 'Engineering notes',
+    'design' => 'Design review',
+    'research' => 'Research notes',
+    'study' => 'Study notes',
+    'interview' => 'Interview notes',
+    'standup' => 'Standup',
+    'retrospective' => 'Retrospective',
+    'planning' => 'Planning',
+    'brainstorm' => 'Brainstorm',
+    'contract' => 'Contract review',
+    'legal' => 'Legal review',
+    'finance' => 'Finance notes',
+    'hiring' => 'Hiring notes',
+    'lecture' => 'Lecture notes',
+    'workshop' => 'Workshop notes',
+    'field' => 'Field report',
+    'custom' => 'Custom',
+    _ => fallback,
+  };
+  return context.appText(fallback, english);
+}
+
+String _localizedMeetingLabel(String value, BuildContext context) {
+  final normalized = value.trim().toLowerCase();
+  final english = switch (normalized) {
+    '概要' || '要約' || 'summary' => 'Summary',
+    'ノート' || 'notes' => 'Notes',
+    'フォーマット' || 'format' => 'Format',
+    '要約テンプレート' || 'summary template' => 'Summary template',
+    '会議議事録' || 'meeting minutes' => 'Meeting minutes',
+    'todo' || 'to do' || 'action items' || 'アクションアイテム' => 'Action items',
+    '感情分析' ||
+    'センチメンタル' ||
+    'sentiment' ||
+    'sentimental' ||
+    'sentiment analysis' => 'Sentiment analysis',
+    '原文メモ' || 'source notes' => 'Source notes',
+    '詳細ノート' || 'detailed notes' => 'Detailed notes',
+    '学習ノート' || 'study notes' => 'Study notes',
+    'キーワード' || 'keywords' => 'Keywords',
+    '重要マーク' || 'bookmarks' => 'Bookmarks',
+    'ask suggestions' || 'aiに聞けること' => 'Ask suggestions',
+    'マインドマップ' || 'mind map' || 'mindmap' => 'Mind map',
+    '翻訳' || 'translation' => 'Translation',
+    'ソース' || 'source' => 'Source',
+    '論点' || 'issues' || 'discussion points' => 'Discussion points',
+    '決定事項' || 'decisions' => 'Decisions',
+    _ => value,
+  };
+  final japanese = switch (normalized) {
+    'summary' => '要約',
+    'notes' => 'ノート',
+    'format' => 'フォーマット',
+    'summary template' => '要約テンプレート',
+    'meeting minutes' => '会議議事録',
+    'action items' => 'TODO',
+    'sentiment' || 'sentimental' || 'sentiment analysis' => '感情分析',
+    'source notes' => '原文メモ',
+    'detailed notes' => '詳細ノート',
+    'study notes' => '学習ノート',
+    'keywords' => 'キーワード',
+    'bookmarks' => '重要マーク',
+    'ask suggestions' => 'AIに聞けること',
+    'mind map' => 'マインドマップ',
+    'translation' => '翻訳',
+    'source' => 'ソース',
+    'issues' || 'discussion points' => '論点',
+    'decisions' => '決定事項',
+    _ => value,
+  };
+  return context.appText(japanese, english);
+}
+
+String _localizedMeetingText(String value, BuildContext context) {
+  if (context.appUsesEnglish) {
+    return value
+        .replaceAll(RegExp(r'^概要\s*[:：]', multiLine: true), 'Summary:')
+        .replaceAll(RegExp(r'^要約\s*[:：]', multiLine: true), 'Summary:')
+        .replaceAll(RegExp(r'^ノート\s*[:：]', multiLine: true), 'Notes:')
+        .replaceAll(RegExp(r'^フォーマット\s*[:：]', multiLine: true), 'Format:')
+        .replaceAll(RegExp(r'^感情分析\s*[:：]', multiLine: true), 'Sentiment:')
+        .replaceAll(RegExp(r'^センチメンタル\s*[:：]', multiLine: true), 'Sentiment:')
+        .replaceAll(RegExp(r'^TODO\s*[:：]', multiLine: true), 'Action items:')
+        .replaceAll(RegExp(r'^原文メモ\s*[:：]', multiLine: true), 'Source notes:')
+        .replaceAll(
+          RegExp(r'^詳細ノート\s*[:：]', multiLine: true),
+          'Detailed notes:',
+        )
+        .replaceAll(RegExp(r'^学習ノート\s*[:：]', multiLine: true), 'Study notes:')
+        .replaceAll(
+          RegExp(r'^論点\s*[:：]', multiLine: true),
+          'Discussion points:',
+        )
+        .replaceAll(RegExp(r'^決定事項\s*[:：]', multiLine: true), 'Decisions:')
+        .replaceAll('満足度', 'Satisfaction')
+        .replaceAll('モチベーション', 'Motivation')
+        .replaceAll('懸念', 'Concern')
+        .replaceAll(
+          '音量と無音比率も加味しています。',
+          'Audio volume and silence ratio are also included.',
+        )
+        .replaceAllMapped(RegExp(r'発話比率\s*(\d+)%?。?'), (match) {
+          return ' Speech ratio ${match.group(1)}%.';
+        });
+  }
+  return value
+      .replaceAll(RegExp(r'^Summary\s*[:：]', multiLine: true), '要約:')
+      .replaceAll(RegExp(r'^Notes\s*[:：]', multiLine: true), 'ノート:')
+      .replaceAll(RegExp(r'^Format\s*[:：]', multiLine: true), 'フォーマット:')
+      .replaceAll(
+        RegExp(r'^Sentiment Analysis\s*[:：]', multiLine: true),
+        '感情分析:',
+      )
+      .replaceAll(RegExp(r'^Sentiment\s*[:：]', multiLine: true), '感情分析:')
+      .replaceAll(RegExp(r'^Sentimental\s*[:：]', multiLine: true), '感情分析:')
+      .replaceAll(RegExp(r'^Action Items\s*[:：]', multiLine: true), 'TODO:')
+      .replaceAll(RegExp(r'^Source Notes\s*[:：]', multiLine: true), '原文メモ:')
+      .replaceAll(RegExp(r'^Detailed Notes\s*[:：]', multiLine: true), '詳細ノート:')
+      .replaceAll(RegExp(r'^Study Notes\s*[:：]', multiLine: true), '学習ノート:')
+      .replaceAll('Satisfaction', '満足度')
+      .replaceAll('Motivation', 'モチベーション')
+      .replaceAll('Concern', '懸念')
+      .replaceAll(
+        'Estimated from positive terms, concern terms, action terms, and filler frequency in the transcript.',
+        '文字起こし内の前向きな表現、懸念表現、行動に関する表現、フィラーの頻度から推定しています。',
+      )
+      .replaceAll(
+        'Audio volume and silence ratio are also included.',
+        '音量と無音比率も加味しています。',
+      )
+      .replaceAllMapped(RegExp(r'Speech ratio\s*(\d+)%\.?'), (match) {
+        return '発話比率 ${match.group(1)}%。';
+      });
+}
+
+String _localizedSentimentSummary(
+  MeetingSentimentMetrics sentiment,
+  BuildContext context,
+) {
+  final raw = sentiment.summary.trim();
+  final hasAudioContext =
+      raw.contains('音量と無音比率') || raw.contains('Audio volume and silence ratio');
+  final speechRatioMatch =
+      RegExp(r'発話比率\s*(\d+)%?').firstMatch(raw) ??
+      RegExp(r'Speech ratio\s*(\d+)%').firstMatch(raw);
+
+  final buffer = StringBuffer(
+    context.appText(
+      '文字起こし内の前向きな表現、懸念表現、行動に関する表現、フィラーの頻度から推定しています。',
+      'Estimated from positive terms, concern terms, action terms, and filler frequency in the transcript.',
+    ),
+  );
+  if (hasAudioContext) {
+    buffer.write(' ');
+    buffer.write(
+      context.appText(
+        '音量と無音比率も加味しています。',
+        'Audio volume and silence ratio are also included.',
+      ),
+    );
+  }
+  if (speechRatioMatch != null) {
+    final ratio = speechRatioMatch.group(1);
+    final speechText = context.appText(
+      '発話比率 $ratio%。',
+      'Speech ratio $ratio%.',
+    );
+    buffer.write(' ');
+    buffer.write(speechText);
+  }
+  return buffer.toString().trim();
+}
+
+String _takeTextRunes(String value, int maxRunes) {
+  final runes = value.runes.toList(growable: false);
+  if (runes.length <= maxRunes) {
+    return value;
+  }
+  return '${String.fromCharCodes(runes.take(maxRunes - 1))}…';
+}
+
 String _cleanSpeechTextForTts(String text) {
   return text
       .split('\n')
@@ -2182,7 +2485,7 @@ String _cleanSpeechTextForTts(String text) {
       .trim();
 }
 
-String _mindMapNodeLabel(MeetingMindMapNode node) {
+String _mindMapNodeLabel(MeetingMindMapNode node, BuildContext context) {
   final candidates = <String>[node.label, node.summary];
   for (final candidate in candidates) {
     final cleaned = candidate
@@ -2190,10 +2493,10 @@ String _mindMapNodeLabel(MeetingMindMapNode node) {
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     if (cleaned.isNotEmpty) {
-      return cleaned;
+      return _localizedMeetingLabel(cleaned, context);
     }
   }
-  return '項目';
+  return context.appText('項目', 'Item');
 }
 
 Widget _sectionTitle(BuildContext context, String title) {
