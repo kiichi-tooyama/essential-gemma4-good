@@ -748,9 +748,15 @@ class MeetingController extends ChangeNotifier {
         transcriptSegments,
       );
       final noteSets = <MeetingNoteSet>[
-        MeetingNoteSet(title: '概要', body: summaryText),
-        MeetingNoteSet(title: '論点', body: _extractSection(analysis, '論点')),
-        MeetingNoteSet(title: '決定事項', body: _extractSection(analysis, '決定事項')),
+        MeetingNoteSet(title: 'Overview', body: summaryText),
+        MeetingNoteSet(
+          title: 'Discussion points',
+          body: _extractSection(analysis, '論点'),
+        ),
+        MeetingNoteSet(
+          title: 'Decisions',
+          body: _extractSection(analysis, '決定事項'),
+        ),
       ].where((noteSet) => noteSet.body.trim().isNotEmpty).toList();
       final effectiveNoteSets = noteSets.isEmpty
           ? _buildFallbackNoteSets(summaryText, todos, cleanTranscription)
@@ -887,7 +893,9 @@ ${_takeRunes(transcription, 2400)}''',
     final answer = await (() async {
       try {
         final model = _preferredChatModel();
-        return await _generateText(model, '''以下の会議内容を理解した上で、質問に答えてください。
+        return await _generateText(
+          model,
+          '''以下の会議内容を理解した上で、質問に答えてください。
 ${sharedMemory.isNotEmpty ? '\n$sharedMemory\n' : ''}
 ${webResult.hasSources ? '\n${webResult.buildPromptContext()}\n' : ''}
 
@@ -903,8 +911,9 @@ ${_formatTranscriptForPrompt(session.transcriptSegments, session.transcription)}
 # 質問
 $question
 
-回答では必要に応じて [00:12] のような根拠時刻を入れてください。''', maxTokens: 256)
-            .timeout(const Duration(seconds: 90));
+回答では必要に応じて [00:12] のような根拠時刻を入れてください。''',
+          maxTokens: 256,
+        ).timeout(const Duration(seconds: 90));
       } catch (error) {
         debugPrint('Meeting consultation GenAI fallback: $error');
         return _fallbackMeetingQuestionAnswer(session, question, webResult);
@@ -1765,6 +1774,7 @@ ${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 420);
         lower.contains('translated text') ||
         lower.contains('translation:') ||
         lower.contains('here is') ||
+        lower.contains('confirmed from the transcript') ||
         lower.contains('could not be generated') ||
         lower.contains('could not translate') ||
         lower.contains('summary based on the transcription')) {
@@ -2158,25 +2168,29 @@ ${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 420);
       _setProcessingStage(
         sessionId,
         strings.t('meeting.stage.summarizing'),
-        'マインドマップを個別に整理しています',
+        'Organizing the mind map',
       );
     }
-    final output = await _generateText(model, '''以下の会議内容からマインドマップだけを生成してください。
+    final output = await _generateText(
+      model,
+      '''Generate only a mind map from this meeting.
 
-厳守事項:
-- 出力は3から8行
-- 各行は必ず「中心トピック > 子トピック > 要点」の形
-- 見出し、説明、箇条書き記号、翻訳、TODO本文は混ぜない
-- 同じ語を繰り返さず、会議の実内容を使う
+Strict rules:
+- Output 3 to 8 lines.
+- Each line must use exactly: central topic > subtopic > key point
+- Do not include headings, explanations, bullet marks, translations, or raw TODO text.
+- Use the real meeting content and avoid repeating generic labels.
 
-# 要約
+# Summary
 $summary
 
 # TODO
 $todos
 
-# 文字起こし
-${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 360);
+# Transcript
+${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''',
+      maxTokens: 360,
+    );
     return _parseMindMap(output);
   }
 
@@ -2267,17 +2281,12 @@ ${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 360);
   }
 
   Map<String, String> _fallbackMeetingTranslations(String summaryText) {
-    final excerpt = _takeRunes(
-      _cleanModelText(summaryText).replaceAll(RegExp(r'\s+'), ' ').trim(),
-      220,
-    );
     return <String, String>{
-      'en': excerpt.isEmpty
-          ? 'No meeting summary was available.'
-          : 'Meeting summary: $excerpt',
-      'ja': excerpt.isEmpty ? '会議要約はありません。' : '会議要約: $excerpt',
+      'en':
+          'The meeting content has been organized. Review the summary, action items, and transcript to confirm the important points.',
+      'ja': '会議内容を整理しました。要約、TODO、原文記録を確認して重要な点を見直してください。',
       'zh': '会议内容已整理。请查看摘要、待办事项和原文记录确认重点。',
-      'ko': excerpt.isEmpty ? '사용 가능한 회의 요약이 없습니다.' : '회의 요약: $excerpt',
+      'ko': '회의 내용이 정리되었습니다. 요약, 할 일, 원문 기록을 확인해 핵심 내용을 검토하세요.',
     };
   }
 
@@ -2305,11 +2314,16 @@ ${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 360);
   String _extractSection(String text, String heading) {
     final headings = <String>[
       '要約',
+      'Summary',
       'TODO',
       'ToDo',
       'タイムライン',
+      'Timeline',
       '論点',
+      'Discussion Points',
+      'Issues',
       '決定事項',
+      'Decisions',
       'Ask',
       'MindMap',
       'Mind Map',
@@ -2318,7 +2332,11 @@ ${_takeRunes(transcription, _meetingPromptTranscriptRunes)}''', maxTokens: 360);
       '한국어',
     ];
     final aliases = switch (heading) {
+      '要約' => const <String>['要約', 'Summary'],
       'TODO' => const <String>['TODO', 'ToDo', 'To Do', 'タスク', 'アクションアイテム'],
+      'タイムライン' => const <String>['タイムライン', 'Timeline'],
+      '論点' => const <String>['論点', 'Discussion Points', 'Issues'],
+      '決定事項' => const <String>['決定事項', 'Decisions'],
       'MindMap' => const <String>['MindMap', 'Mind Map', 'マインドマップ'],
       'English' => const <String>['English', '英語'],
       '中文' => const <String>['中文', '中国語', '简体中文'],

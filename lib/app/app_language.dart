@@ -40,7 +40,7 @@ class AppLanguageScope extends InheritedWidget {
 }
 
 extension AppLanguageContext on BuildContext {
-  bool get appUsesEnglish => AppLanguageScope.maybeOf(this)?.code == 'en';
+  bool get appUsesEnglish => true;
 
   String appText(String japanese, String english) {
     return appUsesEnglish ? english : japanese;

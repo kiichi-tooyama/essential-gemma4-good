@@ -559,28 +559,14 @@ class _InputModelControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _InputControlButton(
-            icon: Icons.auto_awesome_rounded,
-            label: hasAvailableModels
-                ? modelLabel
-                : context.appText('AIを追加', 'Add AI'),
-            onPressed: enabled
-                ? hasAvailableModels
-                      ? onChooseModel
-                      : onOpenModels
-                : null,
-          ),
-        ),
-        const SizedBox(width: 8),
-        _InputControlButton(
-          icon: Icons.palette_outlined,
-          label: adapterLabel ?? context.appText('スタイル', 'Style'),
-          onPressed: enabled && hasAvailableModels ? onChooseAdapter : null,
-        ),
-      ],
+    return _InputControlButton(
+      icon: Icons.auto_awesome_rounded,
+      label: hasAvailableModels ? modelLabel : 'AIを追加',
+      onPressed: enabled
+          ? hasAvailableModels
+                ? onChooseModel
+                : onOpenModels
+          : null,
     );
   }
 }

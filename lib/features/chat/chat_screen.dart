@@ -2106,9 +2106,13 @@ class _ChatScreenState extends State<ChatScreen>
         _ModelChoice(
           id: record.modelId,
           adapterModelId: record.modelId,
-          title: _friendlyChatModelTitle(record.modelId, record.displayName),
+          title: _friendlyChatModelTitle(
+            record.modelId,
+            record.displayName,
+            context.appUsesEnglish,
+          ),
           subtitle: genAiReplacement == null
-              ? 'チャットAI · ${_formatBytes(record.sizeBytes)}'
+              ? '${context.appText('チャットAI', 'Chat AI')} · ${_formatBytes(record.sizeBytes)}'
               : 'LiteRT-LM · ${_formatBytes(effectiveSizeBytes)}',
           path: effectivePath,
           isSmokeModel: false,
@@ -2141,9 +2145,10 @@ class _ChatScreenState extends State<ChatScreen>
             title: _friendlyChatBundleTitle(
               bundle.displayName,
               component.modelId,
+              context.appUsesEnglish,
             ),
             subtitle:
-                '${_friendlyChatModelTitle(component.modelId, component.modelId)} · ${genAiReplacement == null ? '機能セット' : 'LiteRT-LM ${_formatBytes(effectiveSizeBytes)}'}',
+                '${_friendlyChatModelTitle(component.modelId, component.modelId, context.appUsesEnglish)} · ${genAiReplacement == null ? context.appText('機能セット', 'Feature set') : 'LiteRT-LM ${_formatBytes(effectiveSizeBytes)}'}',
             path: effectivePath,
             isSmokeModel: false,
           ),
@@ -2159,7 +2164,9 @@ class _ChatScreenState extends State<ChatScreen>
         _ModelChoice(
           id: model.id,
           adapterModelId: model.id,
-          title: model.title.isEmpty ? 'Local GenAI model' : model.title,
+          title: model.title.isEmpty
+              ? context.appText('端末内GenAIモデル', 'Local GenAI model')
+              : model.title,
           subtitle: 'LiteRT-LM · ${_formatBytes(model.sizeBytes)}',
           path: model.path,
           isSmokeModel: false,
@@ -2178,7 +2185,7 @@ class _ChatScreenState extends State<ChatScreen>
         _ModelChoice(
           id: _smokeModelId,
           adapterModelId: _smokeModelId,
-          title: 'Smoke model',
+          title: context.appText('動作確認モデル', 'Smoke model'),
           subtitle: _modelPathController.text,
           path: _modelPathController.text,
           isSmokeModel: true,
@@ -2840,27 +2847,31 @@ class _ChatHistoryDrawer extends StatelessWidget {
   }
 }
 
-String _friendlyChatModelTitle(String modelId, String fallback) {
+String _friendlyChatModelTitle(
+  String modelId,
+  String fallback,
+  bool useEnglish,
+) {
   if (modelId == 'gemma-4-e4b-it') {
-    return '高精度チャットAI';
+    return useEnglish ? 'High-accuracy chat AI' : '高精度チャットAI';
   }
   if (modelId == 'gemma-4-e4b-litertlm-it') {
-    return '高精度スマホ最適化チャットAI';
+    return useEnglish ? 'High-accuracy mobile chat AI' : '高精度スマホ最適化チャットAI';
   }
   if (modelId == 'gemma-3n-e4b-it') {
-    return '高精度マルチモーダルAI';
+    return useEnglish ? 'High-accuracy multimodal AI' : '高精度マルチモーダルAI';
   }
   if (modelId == 'gemma-3n-e2b-it') {
-    return '軽量マルチモーダルAI';
+    return useEnglish ? 'Light multimodal AI' : '軽量マルチモーダルAI';
   }
   if (modelId == 'gemma-4-e2b-it') {
-    return '軽めのチャットAI';
+    return useEnglish ? 'Light chat AI' : '軽めのチャットAI';
   }
   if (modelId == 'gemma-4-e2b-litertlm-it') {
-    return 'スマホ最適化チャットAI';
+    return useEnglish ? 'Mobile-optimized chat AI' : 'スマホ最適化チャットAI';
   }
   if (modelId == 'essential-mini') {
-    return '省スペースAI';
+    return useEnglish ? 'Compact AI' : '省スペースAI';
   }
   return fallback;
 }
@@ -2875,21 +2886,25 @@ bool _isSupportedChatModelId(String modelId) {
       modelId == 'gemma-4-e4b-it';
 }
 
-String _friendlyChatBundleTitle(String displayName, String modelId) {
+String _friendlyChatBundleTitle(
+  String displayName,
+  String modelId,
+  bool useEnglish,
+) {
   if (modelId == 'gemma-4-e4b-it') {
-    return '高精度チャットセット';
+    return useEnglish ? 'High-accuracy chat set' : '高精度チャットセット';
   }
   if (modelId == 'gemma-4-e4b-litertlm-it') {
-    return '高精度スマホ最適化チャットセット';
+    return useEnglish ? 'High-accuracy mobile chat set' : '高精度スマホ最適化チャットセット';
   }
   if (modelId == 'gemma-4-e2b-it') {
-    return '軽めのチャットセット';
+    return useEnglish ? 'Light chat set' : '軽めのチャットセット';
   }
   if (modelId == 'gemma-4-e2b-litertlm-it') {
-    return 'スマホ最適化チャットセット';
+    return useEnglish ? 'Mobile-optimized chat set' : 'スマホ最適化チャットセット';
   }
   if (modelId == 'essential-mini') {
-    return 'お試しチャットセット';
+    return useEnglish ? 'Trial chat set' : 'お試しチャットセット';
   }
   return displayName;
 }

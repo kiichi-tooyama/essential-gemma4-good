@@ -88,6 +88,8 @@
   "meeting.source.import": "インポート",
   "meeting.fullTextSearch": "全文検索",
   "meeting.keywordHint": "キーワードを入力",
+  "meeting.searchInRecording": "録音内を検索",
+  "meeting.searchNoUtterance": "該当する発言はありません",
   "common.clear": "クリア",
   "common.cancel": "キャンセル",
   "common.save": "保存",

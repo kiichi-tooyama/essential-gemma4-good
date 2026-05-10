@@ -1,6 +1,6 @@
-# Essential Dart SDK
+# essential_sdk_dart
 
-Essential の Dart / Flutter 向け SDK です。`EssentialClient` を通じてモデル解決、ストリーミング生成、タイムアウト、キャンセル、アダプター管理、統一エラーコードを利用できます。
+Essential の Dart / Flutter 向け SDK です。FFI ランタイムを包む `EssentialClient` を公開し、モデル解決、ストリーミング、タイムアウト、キャンセル、統一エラーコードを提供します。
 
 ## 主要 API
 
@@ -66,4 +66,4 @@ await for (final chunk in client.generateStream(
 
 ## サンプル
 
-詳しい導入手順と実装例は `docs/developer_api.md` を参照してください。
+`example/quick_start.dart` を参照してください。

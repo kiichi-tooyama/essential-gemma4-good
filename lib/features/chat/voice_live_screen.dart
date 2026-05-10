@@ -859,6 +859,7 @@ class _VoiceLiveScreenState extends State<VoiceLiveScreen>
         }
         streamed += visible;
         widget.chatController.appendAssistantChunk(assistantId, visible);
+        unawaited(_queueSpeech(visible));
         _setLiveStatus(
           _assistantSpeaking
               ? _LivePhase.generatingAndSpeaking
@@ -879,6 +880,7 @@ class _VoiceLiveScreenState extends State<VoiceLiveScreen>
       webSources: webSources,
     );
     if (_isCurrentResponse(responseEpoch, assistantId) &&
+        streamed.trim().isEmpty &&
         !_looksLikeJunkSpeech(completedText)) {
       await _queueSpeech(completedText, force: true);
     }
@@ -1163,7 +1165,11 @@ class _VoiceLiveScreenState extends State<VoiceLiveScreen>
   }
 
   Future<void> _queueSpeech(String chunk, {bool force = false}) async {
-    _spokenBuffer += _speechTextForTts(chunk);
+    final text = _speechTextForTts(chunk);
+    if (text.isEmpty) {
+      return;
+    }
+    _spokenBuffer += text;
     await _flushSpeech(force: force);
   }
 
@@ -1199,7 +1205,7 @@ class _VoiceLiveScreenState extends State<VoiceLiveScreen>
     final shouldSpeak =
         force ||
         RegExp(r'[。！？.!?\n]$').hasMatch(text) ||
-        text.runes.length >= 120;
+        text.runes.length >= 72;
     if (!shouldSpeak) {
       debugPrint(
         'ESSENTIAL_PERF live_tts_flush_deferred chars=${text.runes.length} force=$force',
@@ -1294,9 +1300,24 @@ class _VoiceLiveScreenState extends State<VoiceLiveScreen>
   String _speechTextForTts(String value) {
     return value
         .replaceAll(RegExp(r'[*＊]+'), '')
-        .replaceAll(RegExp(r'^[\s・\-—–•●○#]+', multiLine: true), '')
+        .split('\n')
+        .map((line) {
+          final cleaned = line
+              .replaceAll(RegExp(r'^[\s・\-—–•●○#]+'), '')
+              .replaceAll(RegExp(r'[!?！？]+'), '')
+              .trimRight();
+          return _isTtsPunctuationOnly(cleaned) ? '' : cleaned;
+        })
+        .where((line) => line.trim().isNotEmpty)
+        .join('\n')
         .replaceAll(RegExp(r'\s+\n'), '\n')
         .replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  }
+
+  bool _isTtsPunctuationOnly(String value) {
+    return value
+        .replaceAll(RegExp(r'''[\s。、，,：:；;…・\-—–()（）「」『』"'“”]+'''), '')
+        .isEmpty;
   }
 
   String _cleanToken(String currentText, String token) {
