@@ -1,7 +1,0 @@
-name: essential_ui_kit
-description: Essential UI kit package skeleton.
-publish_to: 'none'
-version: 0.1.0
-
-environment:
-  sdk: ^3.11.1

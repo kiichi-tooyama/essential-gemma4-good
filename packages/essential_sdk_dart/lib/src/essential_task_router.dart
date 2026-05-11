@@ -137,11 +137,10 @@ final class EssentialTaskRouter {
 
 final class EssentialTaskRouterFacade {
   EssentialTaskRouterFacade({
-    required EssentialCapabilityRegistry capabilityRegistry,
+    required this.capabilityRegistry,
     required EssentialTaskRouter router,
     required Map<EssentialRuntimeFamily, EssentialRuntime> runtimes,
-  }) : capabilityRegistry = capabilityRegistry,
-       _router = router,
+  }) : _router = router,
        _runtimes = runtimes;
 
   final EssentialCapabilityRegistry capabilityRegistry;

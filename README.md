@@ -1,55 +1,64 @@
-# Essential Production Submission Repository
+# Essential
 
-This folder is a source-only release repository prepared for production
-submission review. It intentionally does not include APK or AAB artifacts.
+Essential is an Android-first multimodal assistant built for the Gemma 4 Good Hackathon. It runs model-powered chat, voice, meeting, image, web, and location-aware workflows from one mobile app.
 
-## Open In Android Studio
+## Features
 
-Main Essential app:
+- On-device chat through Gemma LiteRT-LM model bundles
+- Voice recording, speech playback, and live voice interaction
+- Meeting assistant with transcription, summaries, action items, mind maps, and translation
+- Image and camera input for multimodal questions
+- Optional web grounding for current information
+- Optional location context for local questions
+- External Android and Dart SDKs for app-to-app integration
 
-```bash
-open apps/essential_flutter/android
+## Repository Structure
+
+```text
+android/                  Android application and native bridge
+assets/                   App language files
+lib/                      Flutter application source
+native/                   Native inference, audio, vision, llama.cpp, and whisper.cpp runtime source
+packages/essential_sdk_dart/  Dart SDK used by the app and external integrations
+third_party/              Vulkan and SPIR-V headers required by the Android native build
 ```
 
-Pixel Feature Chat and SDK demos:
+## Model Files
+
+Large model files are not stored in this repository. Essential downloads Gemma LiteRT-LM model bundles from Hugging Face through the app's model management flow, then stores them on the device for offline generation.
+
+## Development
+
+Requirements:
+
+- Flutter 3.35 or newer
+- Android Studio with Android SDK and NDK 28
+- A physical Android device with arm64-v8a support
+
+Run the app:
 
 ```bash
-open packages/essential_android_sdk
+flutter pub get
+flutter run
 ```
 
-From Android Studio, choose a connected Android device and run the desired debug
-configuration. The main Flutter app can also be installed from the terminal:
+Build an Android APK:
 
 ```bash
-cd apps/essential_flutter
-flutter run --flavor standard
+flutter build apk --release
 ```
 
-The Pixel Feature Chat demo can be installed after the main Essential app:
+## Developer API
 
-```bash
-cd packages/essential_android_sdk
-./gradlew :pixel_chat_app:installDebug
-```
+Essential exposes a Dart SDK for apps that want to call the local model runtime, stream generated text, attach adapters, or check installed model state.
 
-## Production Notes
+- SDK package: `packages/essential_sdk_dart`
+- API guide: `docs/developer_api.md`
 
-- Main Essential launcher icons use the blue and green gradient mark in square
-  and round Android launcher assets.
-- Pixel Feature Chat launcher icons use the black and white chat mark in square
-  and round Android launcher assets.
-- The app starts in English by default and can switch to Japanese from Settings.
-- The Flutter debug banner is disabled.
-- Release builds are not signed with debug keys in this source repository.
-- The exported Essential service is protected by a signature permission, and
-  cleartext network traffic is disabled for the main app.
+## Privacy
 
-## Included Source
+Essential is designed to keep local model execution and user files on the device whenever offline models are used. Network access is used only for features that need it, such as optional web grounding or model download.
 
-- `apps/essential_flutter`: main Android/Flutter app.
-- `packages/essential_android_sdk`: local Android SDK and demo apps, including
-  Pixel Feature Chat.
-- `packages/essential_sdk_dart`: Flutter app runtime SDK dependency.
-- `native` and `third_party`: native inference, audio, vision, Whisper, Vulkan,
-  and SPIR-V sources required by the Android build.
-- `docs`: submission and implementation documentation.
+## License
+
+This project is provided for hackathon review and demonstration. Third-party runtime components keep their original licenses in their source directories.

@@ -58,7 +58,7 @@ README にこの表を入れる。
 ## 5. 公開前コマンド
 
 ```bash
-cd apps/essential_flutter
+cd /Users/toyama_kiichi/Essential/apps/essential_flutter
 flutter analyze
 flutter test
 cd android
@@ -66,7 +66,7 @@ cd android
 ```
 
 ```bash
-cd ../..
+cd /Users/toyama_kiichi/Essential
 git status --short
 rg -n "API_KEY|SECRET|TOKEN|PASSWORD|PRIVATE KEY|BEGIN .*KEY|AIza|sk-" .
 ```
