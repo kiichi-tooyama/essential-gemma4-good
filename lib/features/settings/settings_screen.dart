@@ -85,14 +85,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: SegmentedButton<AppLanguagePreference>(
                   segments: const <ButtonSegment<AppLanguagePreference>>[
                     ButtonSegment<AppLanguagePreference>(
-                      value: AppLanguagePreference.japanese,
-                      icon: Icon(Icons.language_rounded),
-                      label: Text('日本語'),
-                    ),
-                    ButtonSegment<AppLanguagePreference>(
                       value: AppLanguagePreference.english,
                       icon: Icon(Icons.translate_rounded),
                       label: Text('English'),
+                    ),
+                    ButtonSegment<AppLanguagePreference>(
+                      value: AppLanguagePreference.japanese,
+                      icon: Icon(Icons.language_rounded),
+                      label: Text('日本語'),
                     ),
                   ],
                   selected: <AppLanguagePreference>{language},

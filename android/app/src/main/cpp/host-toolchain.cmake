@@ -6,4 +6,17 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
 set(CMAKE_C_COMPILER /usr/bin/cc)
 set(CMAKE_CXX_COMPILER /usr/bin/c++)
-set(CMAKE_MAKE_PROGRAM /Users/toyama_kiichi/Library/Android/sdk/cmake/3.22.1/bin/ninja CACHE FILEPATH "" FORCE)
+find_program(
+    ESSENTIAL_HOST_NINJA
+    ninja
+    PATHS
+        "$ENV{ANDROID_HOME}/cmake/3.22.1/bin"
+        "$ENV{ANDROID_SDK_ROOT}/cmake/3.22.1/bin"
+    NO_DEFAULT_PATH
+)
+if(NOT ESSENTIAL_HOST_NINJA)
+    find_program(ESSENTIAL_HOST_NINJA ninja)
+endif()
+if(ESSENTIAL_HOST_NINJA)
+    set(CMAKE_MAKE_PROGRAM "${ESSENTIAL_HOST_NINJA}" CACHE FILEPATH "" FORCE)
+endif()

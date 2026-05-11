@@ -1,11 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <permission
         android:name="com.example.essential_flutter.permission.BIND_ESSENTIAL_SERVICE"
-        android:protectionLevel="normal" />
+        android:protectionLevel="signature" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -17,10 +16,14 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:label="essential_flutter"
+        android:label="Essential"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:usesCleartextTraffic="false">
         <uses-native-library
             android:name="libvndksupport.so"
             android:required="false" />

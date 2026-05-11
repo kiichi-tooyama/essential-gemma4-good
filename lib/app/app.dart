@@ -78,6 +78,7 @@ class _EssentialAppState extends State<EssentialApp> {
       builder: (context, _) {
         return MaterialApp(
           title: 'Essential',
+          debugShowCheckedModeBanner: false,
           theme: buildEssentialTheme(),
           darkTheme: buildEssentialDarkTheme(),
           themeMode: _preferencesController.themeMode,

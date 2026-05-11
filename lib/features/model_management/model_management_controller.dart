@@ -1171,7 +1171,7 @@ class ModelManagementController extends ChangeNotifier {
   String _formatCatalogError(Object error) {
     if (_looksOffline(error)) {
       return 'Registry API に接続できませんでした: ${_registryApiClient.baseUrl}\n'
-          'サーバーを起動するか、--dart-define=ESSENTIAL_REGISTRY_URL=http://<host>:8100 を指定してください。\n'
+          'サーバーを起動するか、--dart-define=ESSENTIAL_REGISTRY_URL=https://<host> を指定してください。\n'
           '$error';
     }
     return error.toString();

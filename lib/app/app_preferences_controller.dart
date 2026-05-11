@@ -113,12 +113,11 @@ class AppPreferencesController extends ChangeNotifier {
   Future<void> updateLanguagePreference(
     AppLanguagePreference preference,
   ) async {
-    final nextPreference = AppLanguagePreference.english;
-    if (_languagePreference == nextPreference) {
+    if (_languagePreference == preference) {
       return;
     }
-    _languagePreference = nextPreference;
-    _languagePack = await loadAppLanguagePack(nextPreference);
+    _languagePreference = preference;
+    _languagePack = await loadAppLanguagePack(preference);
     notifyListeners();
     await _persist();
   }
@@ -176,7 +175,7 @@ class AppPreferencesController extends ChangeNotifier {
 
   AppLanguagePreference _languagePreferenceFromString(String? rawValue) {
     return switch (rawValue) {
-      'ja' => AppLanguagePreference.english,
+      'ja' => AppLanguagePreference.japanese,
       'en' => AppLanguagePreference.english,
       _ => AppLanguagePreference.english,
     };

@@ -58,15 +58,14 @@ README にこの表を入れる。
 ## 5. 公開前コマンド
 
 ```bash
-cd /Users/toyama_kiichi/Essential/apps/essential_flutter
+cd .
 flutter analyze
-flutter test
+flutter build apk --release
 cd android
 ./gradlew :app:assembleDebug
 ```
 
 ```bash
-cd /Users/toyama_kiichi/Essential
 git status --short
 rg -n "API_KEY|SECRET|TOKEN|PASSWORD|PRIVATE KEY|BEGIN .*KEY|AIza|sk-" .
 ```
