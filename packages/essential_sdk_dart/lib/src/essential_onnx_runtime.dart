@@ -401,9 +401,8 @@ Future<void> _onnxIsolateMain(SendPort sendPort) async {
       final inputDataPointer = calloc<Float>(
         input.lengthInBytes ~/ sizeOf<Float>(),
       );
-      inputDataPointer
-          .asTypedList(input.lengthInBytes ~/ sizeOf<Float>())
-          .setAll(0, input.buffer.asFloat32List());
+      inputDataPointer.asTypedList(input.lengthInBytes ~/ sizeOf<Float>())
+        ..setAll(0, input.buffer.asFloat32List());
 
       final outputDataPointer = calloc<Pointer<Float>>();
       final outputLengthPointer = calloc<Uint64>();

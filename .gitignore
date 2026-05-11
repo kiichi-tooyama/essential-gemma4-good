@@ -1,37 +1,16 @@
 .DS_Store
-
-# Dart and Flutter
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
+.gradle/
+.idea/
 build/
-android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
-
-# Android and Gradle
-android/.gradle/
-android/local.properties
-**/local.properties
+**/build/
 *.apk
 *.aab
-*.aar
-
-# IDE files
-.idea/
-.vscode/
-*.iml
-
-# Local models and runtime data
+*.litertlm
 *.gguf
 *.ggml
-*.onnx
-*.litertlm
-models/
-!native/runtimes/llama/llama.cpp/src/models/
-!native/runtimes/llama/llama.cpp/src/models/**
-essential_models/
-
-# Logs and local environment
-*.log
+*.jks
+*.keystore
+*.pem
+key.properties
 .env
-.env.*

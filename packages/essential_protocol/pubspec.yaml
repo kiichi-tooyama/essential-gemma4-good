@@ -1,0 +1,7 @@
+name: essential_protocol
+description: Essential protocol package skeleton.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.11.1

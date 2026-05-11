@@ -1,0 +1,34 @@
+PODS:
+  - AppGroupSupport (0.1.0)
+  - essential_sdk_dart (0.1.0):
+    - Flutter
+  - EssentialKit (0.1.0):
+    - AppGroupSupport
+    - essential_sdk_dart
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - AppGroupSupport (from `../../../platform/ios_framework/AppGroupSupport`)
+  - essential_sdk_dart (from `.symlinks/plugins/essential_sdk_dart/ios`)
+  - EssentialKit (from `../../../platform/ios_framework/EssentialKit`)
+  - Flutter (from `Flutter`)
+
+EXTERNAL SOURCES:
+  AppGroupSupport:
+    :path: "../../../platform/ios_framework/AppGroupSupport"
+  essential_sdk_dart:
+    :path: ".symlinks/plugins/essential_sdk_dart/ios"
+  EssentialKit:
+    :path: "../../../platform/ios_framework/EssentialKit"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  AppGroupSupport: a0fe2f755e6785219d8d5107a2bb8e97b37c8b6f
+  essential_sdk_dart: 694c3f091abc57fe6ae761d174b0c9393417be0e
+  EssentialKit: 0c47ad5305917d9ced2ae79ddc8826450f319462
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+
+PODFILE CHECKSUM: 21fb9667f781bc12eb4a782feb025110f1af3a69
+
+COCOAPODS: 1.16.2
