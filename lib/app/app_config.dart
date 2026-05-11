@@ -3,7 +3,7 @@ class AppConfig {
 
   static const registryApiUrl = String.fromEnvironment(
     'ESSENTIAL_REGISTRY_URL',
-    defaultValue: 'https://models.node-cloud.net',
+    defaultValue: '',
   );
 
   static const huggingFaceOAuthClientId = String.fromEnvironment(
