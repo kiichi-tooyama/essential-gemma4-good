@@ -9,12 +9,18 @@ build/
 android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 
 # Android and Gradle
+.gradle/
+**/.gradle/
 android/.gradle/
 android/local.properties
 **/local.properties
 *.apk
+*.idsig
 *.aab
 *.aar
+*.p12
+*.keystore
+*.jks
 
 # IDE files
 .idea/

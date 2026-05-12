@@ -9,20 +9,27 @@ Use the standard app flavor for live recording. Do not build all flavors at once
 on a low-space machine, because the bundled E4B flavor is very large.
 
 ```bash
-cd apps/essential_flutter
+flutter pub get
 flutter analyze
-flutter test test/meeting_enhancements_test.dart
 cd android
-./gradlew :app:assembleStandardDebug
-adb install -r app/build/outputs/apk/standard/debug/app-standard-debug.apk
+./gradlew :app:installDebug
 ```
 
 Build and install the Pixel API demo app:
 
 ```bash
 cd packages/essential_android_sdk
-./gradlew :pixel_chat_app:assembleDebug
-adb install -r pixel_chat_app/build/outputs/apk/debug/pixel_chat_app-debug.apk
+./gradlew :pixel_chat_app:installDebug
+```
+
+Release builds must use the same signing certificate for Essential and Pixel Chat
+because Essential's service bind permission is `signature` protected. Before
+publishing, verify the two release APKs:
+
+```bash
+./scripts/verify_android_release_signatures.sh \
+  /path/to/app-release.apk \
+  packages/essential_android_sdk/pixel_chat_app/build/outputs/apk/release/pixel_chat_app-release.apk
 ```
 
 Device checks:
@@ -36,7 +43,8 @@ adb shell dumpsys package io.essential.sdk.pixelchat | rg "versionName|versionCo
 ## 2. Prepare The Phone State
 
 - Essential is installed and can open.
-- Pixel AI Chat demo is installed and can open.
+- Pixel AI Chat demo is installed and can open. For release testing, install the
+  APK signed with the same certificate as Essential.
 - A Gemma 4 LiteRT-LM model is available in Essential.
 - Web search is enabled for the chat demo.
 - Location permission is granted if you want to ask weather near current
@@ -150,6 +158,8 @@ Check:
 - The external app opens separately from Essential.
 - It calls the Essential service.
 - The answer appears in the Pixel demo app.
+- If the app says the signature does not match, rebuild Pixel Chat with the
+  Essential release keystore before recording.
 - The request is configured with web/location enabled and shared memory read and
   write disabled.
 
