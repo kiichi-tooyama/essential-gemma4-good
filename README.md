@@ -81,7 +81,3 @@ Essential exposes a Dart SDK for apps that want to call the local model runtime,
 ## Privacy
 
 Essential is designed to keep local model execution and user files on the device whenever offline models are used. Network access is used only for features that need it, such as optional web grounding or model download.
-
-## License
-
-This project is provided for hackathon review and demonstration. Third-party runtime components keep their original licenses in their source directories.
