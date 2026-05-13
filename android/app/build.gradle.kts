@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.Exec
 
 plugins {
     id("com.android.application")
@@ -14,6 +15,20 @@ val releaseKeystorePropertiesFile = file(
 )
 if (releaseKeystorePropertiesFile.isFile) {
     releaseKeystorePropertiesFile.inputStream().use(releaseKeystoreProperties::load)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.isFile) {
+    localPropertiesFile.inputStream().use(localProperties::load)
+}
+val flutterExecutable = localProperties.getProperty("flutter.sdk")
+    ?.let { file("$it/bin/flutter").absolutePath }
+    ?: "flutter"
+
+val flutterPubGet = tasks.register<Exec>("flutterPubGet") {
+    workingDir = rootProject.file("..")
+    commandLine(flutterExecutable, "pub", "get")
 }
 
 android {
@@ -109,6 +124,12 @@ dependencies {
     androidTestImplementation("androidx.test:core:1.6.1")
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+}
+
+tasks.configureEach {
+    if (name.startsWith("compileFlutterBuild")) {
+        dependsOn(flutterPubGet)
+    }
 }
 
 flutter {
