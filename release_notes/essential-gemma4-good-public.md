@@ -6,9 +6,9 @@ sources, sample files, and release APKs required for the latest demo.
 
 ## APK
 
-- GitHub Release `v1.0.5` asset `app-release.apk`: latest Essential Android app.
-- GitHub Release `v1.0.5` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
-- GitHub Release `v1.0.5` asset `essential-gemma4-good-v1.0.5-source.zip`: explicit source zip for the latest submitted source tree.
+- GitHub Release `v1.0.7` asset `app-release.apk`: latest Essential Android app.
+- GitHub Release `v1.0.7` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
+- GitHub Release `v1.0.7` asset `essential-gemma4-good-v1.0.7-source.zip`: explicit source zip for the latest submitted source tree.
 
 ## Demo Code To Show On PC
 
@@ -54,3 +54,9 @@ and terms.
 - Kept Essential's signature-protected service permission and made same-certificate release signing a required check.
 - Added `scripts/verify_android_release_signatures.sh` to prevent Essential and Pixel Chat release APKs from being published with mismatched signing certificates.
 - Added Android Gradle wrapper files so a fresh GitHub checkout can sync and install from Android Studio without relying on untracked local files.
+
+## 2026-05-13 Android Studio Build Repair
+
+- Pinned the public Android Gradle projects to Homebrew JDK 21 so a Mac with default JDK 25 can still sync and build from Android Studio.
+- Added release signing configuration to the main Essential APK so release assets install on Pixel devices with the same certificate as Pixel Feature Chat.
+- Bumped both APKs to version `1.0.7` / versionCode `7`.

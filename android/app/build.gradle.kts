@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releaseKeystoreProperties = Properties()
+val releaseKeystorePropertiesFile = file(
+    System.getenv("ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.android/essential-gemma4-good-release.properties",
+)
+if (releaseKeystorePropertiesFile.isFile) {
+    releaseKeystorePropertiesFile.inputStream().use(releaseKeystoreProperties::load)
 }
 
 android {
@@ -69,8 +80,22 @@ android {
         }
     }
 
+    signingConfigs {
+        if (releaseKeystoreProperties.isNotEmpty()) {
+            create("essentialRelease") {
+                storeFile = file(releaseKeystoreProperties.getProperty("storeFile"))
+                storePassword = releaseKeystoreProperties.getProperty("storePassword")
+                keyAlias = releaseKeystoreProperties.getProperty("keyAlias")
+                keyPassword = releaseKeystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseKeystoreProperties.isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("essentialRelease")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
