@@ -34,6 +34,7 @@ Requirements:
 
 - Flutter 3.35 or newer
 - Android Studio with Android SDK and NDK 28
+- JDK 21. This public package pins Gradle to Homebrew JDK 21 at `/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home` because JDK 25 currently breaks Android Gradle sync on this project.
 - A physical Android device with arm64-v8a support
 
 Run the app:
