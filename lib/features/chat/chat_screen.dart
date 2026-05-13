@@ -2412,7 +2412,7 @@ class _ChatScreenState extends State<ChatScreen>
       status: ChatAttachmentStatus.complete,
       progress: 1,
       transcription:
-          'この提出ビルドでは、録音ファイルの自動文字起こしではなく端末内SpeechRecognizerによるライブ音声入力を使用します。',
+          '録音ファイルの自動文字起こしではなく、端末内SpeechRecognizerによるライブ音声入力を使用します。',
     );
   }
 

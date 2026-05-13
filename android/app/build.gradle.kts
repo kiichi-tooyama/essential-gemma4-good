@@ -9,10 +9,9 @@ plugins {
 }
 
 val releaseKeystoreProperties = Properties()
-val releaseKeystorePropertiesFile = file(
-    System.getenv("ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES")
-        ?: "${System.getProperty("user.home")}/.android/essential-gemma4-good-release.properties",
-)
+val releaseKeystorePropertiesFile = System.getenv("ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES")
+    ?.let(::file)
+    ?: file("${System.getProperty("user.home")}/.android/essential-release.properties")
 if (releaseKeystorePropertiesFile.isFile) {
     releaseKeystorePropertiesFile.inputStream().use(releaseKeystoreProperties::load)
 }

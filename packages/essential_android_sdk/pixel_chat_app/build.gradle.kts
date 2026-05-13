@@ -6,10 +6,9 @@ plugins {
 }
 
 val releaseKeystoreProperties = Properties()
-val releaseKeystorePropertiesFile = file(
-    System.getenv("ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES")
-        ?: "${System.getProperty("user.home")}/.android/essential-gemma4-good-release.properties",
-)
+val releaseKeystorePropertiesFile = System.getenv("ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES")
+    ?.let(::file)
+    ?: file("${System.getProperty("user.home")}/.android/essential-release.properties")
 if (releaseKeystorePropertiesFile.isFile) {
     releaseKeystorePropertiesFile.inputStream().use(releaseKeystoreProperties::load)
 }
@@ -29,8 +28,8 @@ android {
         applicationId = "io.essential.sdk.pixelchat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.0.11"
+        versionCode = 12
+        versionName = "1.0.12"
     }
 
     compileOptions {

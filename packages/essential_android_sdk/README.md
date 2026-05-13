@@ -150,7 +150,7 @@ cd packages/essential_android_sdk
 Release 版 Essential APK と接続する Pixel Chat APK は、Essential と同じ証明書で署名してください。ローカルに次の properties がある場合、`assembleRelease` は同じ release key を使います。
 
 ```text
-~/.android/essential-gemma4-good-release.properties
+~/.android/essential-release.properties
 ```
 
 別の場所に置く場合:

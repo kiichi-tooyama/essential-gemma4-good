@@ -1,6 +1,6 @@
 # Essential
 
-Essential is an Android-first multimodal assistant built for the Gemma 4 Good Hackathon. It runs model-powered chat, voice, meeting, image, web, and location-aware workflows from one mobile app.
+Essential is an Android-first multimodal assistant. It runs model-powered chat, voice, meeting, image, web, and location-aware workflows from one mobile app.
 
 ## Features
 

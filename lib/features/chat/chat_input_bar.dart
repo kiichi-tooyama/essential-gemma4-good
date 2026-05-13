@@ -307,7 +307,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
       ).showSnackBar(SnackBar(content: Text(message)));
       return;
     } catch (_) {
-      // The submission build uses Android's on-device SpeechRecognizer.
+      // Voice input uses Android's on-device SpeechRecognizer.
       return;
     }
   }

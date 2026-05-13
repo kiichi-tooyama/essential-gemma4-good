@@ -1,16 +1,15 @@
-# Essential Gemma 4 Good Public Package
+# Essential Public Package
 
-This release is the current upload-ready package for the hackathon demo assets.
-It keeps the same public repository format and updates only the submitted app
-sources, sample files, and release APKs required for the latest demo.
+This release is the current public Essential package. It keeps the public
+repository format and updates the app sources, sample files, and release APKs.
 
 ## APK
 
-- GitHub Release `v1.0.11` asset `app-release.apk`: latest Essential Android app.
-- GitHub Release `v1.0.11` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
-- GitHub Release `v1.0.11` asset `essential-gemma4-good-v1.0.11-source.zip`: explicit source zip for the latest submitted source tree.
+- GitHub Release `v1.0.12` asset `app-release.apk`: latest Essential Android app.
+- GitHub Release `v1.0.12` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
+- GitHub Release `v1.0.12` asset `essential-v1.0.12-source.zip`: explicit source zip for the latest source tree.
 
-## Demo Code To Show On PC
+## Demo Code
 
 - `source_samples/PixelFeatureChatDemo.kt`: minimal API usage sample.
 - `source_samples/PixelChatMainActivity.kt`: actual Pixel Feature Chat demo app.
@@ -37,7 +36,7 @@ and terms.
 ## 2026-05-12 Update
 
 - Removed the accidental working-repository layout from the public repo.
-- Kept the root Flutter public format used by the previous submission.
+- Kept the root Flutter public format.
 - Updated Essential icons, language switching, Debug banner handling, and Android security settings.
 - Updated Pixel Feature Chat sample data and refreshed release APK assets.
 
@@ -45,7 +44,7 @@ and terms.
 ## 2026-05-12 Repair Update
 
 - Restored the previous public repository format after the accidental working-tree upload.
-- Applied only the Essential app updates needed for submission: icons, language switching, Debug banner removal, HTTPS registry default, and Android security hardening.
+- Applied Essential app updates: icons, language switching, Debug banner removal, HTTPS registry default, and Android security hardening.
 - Refreshed the GitHub Release APK as `app-release.apk`.
 
 ## 2026-05-12 Pixel Feature Chat Update
@@ -64,3 +63,10 @@ and terms.
 - Added the same dependency preparation in Android Gradle settings so Flutter plugins are included during the first Android Studio sync/build.
 - Main Android Gradle builds now read the APK version directly from `pubspec.yaml`, so Android Studio builds and `flutter build apk` produce the same version.
 - Added an Android Studio Kotlin DSL sync compatibility task for `:app:prepareKotlinBuildScriptModel`.
+
+## 2026-05-14 Repository Text Cleanup
+
+- Removed event-specific packaging wording from the public repository.
+- Removed the event-specific documentation folder so the repository reads as a normal Essential project.
+- Replaced visible app text that referred to a special build with regular product wording.
+- Renamed the default local release signing properties path to `~/.android/essential-release.properties`.
