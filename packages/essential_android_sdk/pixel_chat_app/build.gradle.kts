@@ -22,8 +22,8 @@ android {
         applicationId = "io.essential.sdk.pixelchat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.0.8"
+        versionCode = 9
+        versionName = "1.0.9"
     }
 
     compileOptions {

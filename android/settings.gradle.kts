@@ -39,6 +39,19 @@ pluginManagement {
                         "sdk.dir=$androidSdkPath\n"
                 )
             }
+            val projectRoot = file("..")
+            val packageConfig = java.io.File(projectRoot, ".dart_tool/package_config.json")
+            val pluginDependencies = java.io.File(projectRoot, ".flutter-plugins-dependencies")
+            if (!packageConfig.isFile || !pluginDependencies.isFile) {
+                val flutterExecutable = java.io.File(flutterSdkPath, "bin/flutter").absolutePath
+                val pubGet = ProcessBuilder(flutterExecutable, "pub", "get")
+                    .directory(projectRoot)
+                    .inheritIO()
+                    .start()
+                check(pubGet.waitFor() == 0) {
+                    "flutter pub get failed while preparing Android Gradle settings"
+                }
+            }
             flutterSdkPath
         }
 
