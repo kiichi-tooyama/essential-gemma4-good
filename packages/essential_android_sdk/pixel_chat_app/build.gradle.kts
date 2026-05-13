@@ -14,6 +14,13 @@ if (releaseKeystorePropertiesFile.isFile) {
     releaseKeystorePropertiesFile.inputStream().use(releaseKeystoreProperties::load)
 }
 
+if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+    tasks.register("prepareKotlinBuildScriptModel") {
+        group = "build setup"
+        description = "Compatibility task used by Android Studio Kotlin DSL sync."
+    }
+}
+
 android {
     namespace = "io.essential.sdk.pixelchat"
     compileSdk = 35
@@ -22,8 +29,8 @@ android {
         applicationId = "io.essential.sdk.pixelchat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.0.10"
+        versionCode = 11
+        versionName = "1.0.11"
     }
 
     compileOptions {

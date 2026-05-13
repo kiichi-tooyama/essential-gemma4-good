@@ -5,6 +5,13 @@ allprojects {
     }
 }
 
+if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+    tasks.register("prepareKotlinBuildScriptModel") {
+        group = "build setup"
+        description = "Compatibility task used by Android Studio Kotlin DSL sync."
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

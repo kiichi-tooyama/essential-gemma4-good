@@ -3,6 +3,13 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+    tasks.register("prepareKotlinBuildScriptModel") {
+        group = "build setup"
+        description = "Compatibility task used by Android Studio Kotlin DSL sync."
+    }
+}
+
 android {
     namespace = "io.essential.sdk.android"
     compileSdk = 35

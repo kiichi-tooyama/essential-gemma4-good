@@ -1,7 +1,7 @@
 name: essential
 description: On-device multimodal assistant built with Gemma.
 publish_to: "none"
-version: 1.0.10+10
+version: 1.0.11+11
 
 environment:
   sdk: ^3.11.1

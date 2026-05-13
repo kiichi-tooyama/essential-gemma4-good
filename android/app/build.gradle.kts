@@ -31,6 +31,13 @@ val flutterPubGet = tasks.register<Exec>("flutterPubGet") {
     commandLine(flutterExecutable, "pub", "get")
 }
 
+if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+    tasks.register("prepareKotlinBuildScriptModel") {
+        group = "build setup"
+        description = "Compatibility task used by Android Studio Kotlin DSL sync."
+    }
+}
+
 val pubspecVersion = Regex("""(?m)^version:\s*([^\s+]+)\+(\d+)\s*$""")
     .find(rootProject.file("../pubspec.yaml").readText())
     ?: error("Could not read version from pubspec.yaml")
