@@ -6,9 +6,9 @@ sources, sample files, and release APKs required for the latest demo.
 
 ## APK
 
-- GitHub Release `v1.0.9` asset `app-release.apk`: latest Essential Android app.
-- GitHub Release `v1.0.9` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
-- GitHub Release `v1.0.9` asset `essential-gemma4-good-v1.0.9-source.zip`: explicit source zip for the latest submitted source tree.
+- GitHub Release `v1.0.10` asset `app-release.apk`: latest Essential Android app.
+- GitHub Release `v1.0.10` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
+- GitHub Release `v1.0.10` asset `essential-gemma4-good-v1.0.10-source.zip`: explicit source zip for the latest submitted source tree.
 
 ## Demo Code To Show On PC
 
@@ -59,6 +59,7 @@ and terms.
 
 - Pinned the public Android Gradle projects to Homebrew JDK 21 so a Mac with default JDK 25 can still sync and build from Android Studio.
 - Added release signing configuration to the main Essential APK so release assets install on Pixel devices with the same certificate as Pixel Feature Chat.
-- Bumped both APKs to version `1.0.9` / versionCode `9`.
+- Bumped both APKs to version `1.0.10` / versionCode `10`.
 - Added automatic `flutter pub get` before Flutter Android Gradle compile tasks so Android Studio builds work from a fresh GitHub ZIP even when `.dart_tool/package_config.json` does not exist yet.
 - Added the same dependency preparation in Android Gradle settings so Flutter plugins are included during the first Android Studio sync/build.
+- Main Android Gradle builds now read the APK version directly from `pubspec.yaml`, so Android Studio builds and `flutter build apk` produce the same version.

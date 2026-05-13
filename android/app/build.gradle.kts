@@ -31,6 +31,12 @@ val flutterPubGet = tasks.register<Exec>("flutterPubGet") {
     commandLine(flutterExecutable, "pub", "get")
 }
 
+val pubspecVersion = Regex("""(?m)^version:\s*([^\s+]+)\+(\d+)\s*$""")
+    .find(rootProject.file("../pubspec.yaml").readText())
+    ?: error("Could not read version from pubspec.yaml")
+val essentialVersionName = pubspecVersion.groupValues[1]
+val essentialVersionCode = pubspecVersion.groupValues[2].toInt()
+
 android {
     namespace = "com.example.essential_flutter"
     compileSdk = flutter.compileSdkVersion
@@ -49,8 +55,8 @@ android {
         applicationId = "com.example.essential_flutter"
         minSdk = maxOf(flutter.minSdkVersion, 28)
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = essentialVersionCode
+        versionName = essentialVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters.clear()
