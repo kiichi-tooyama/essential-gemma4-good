@@ -63,13 +63,8 @@ cd packages/essential_android_sdk
 ./gradlew :pixel_chat_app:installDebug
 ```
 
-For a release Pixel Chat APK to connect to the release Essential APK, both APKs must be signed with the same certificate because the Essential bound service uses a signature-protected permission. Verify before release:
-
-```bash
-./scripts/verify_android_release_signatures.sh \
-  /path/to/essential.apk \
-  packages/essential_android_sdk/pixel_chat_app/build/outputs/apk/release/pixel_chat_app-release.apk
-```
+Pixel Feature Chat connects through the Essential Android SDK. It can be built
+and installed independently from the Essential app.
 
 ## Developer API
 

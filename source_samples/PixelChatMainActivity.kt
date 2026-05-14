@@ -335,9 +335,9 @@ class MainActivity : Activity() {
             message.contains("Permission Denial", ignoreCase = true) ||
                 message.contains("requires", ignoreCase = true) ||
                 message.contains("not allowed to bind", ignoreCase = true) ->
-                "Pixel Chat could not connect because its APK signature does not match Essential. Install the Pixel Chat release APK signed with the same Essential release key."
+                "Pixel Chat could not connect to Essential. Open Essential once, then try again."
             message.contains("Failed to bind", ignoreCase = true) ->
-                "Pixel Chat could not bind to Essential. Open Essential once, then install the matching signed Pixel Chat release APK."
+                "Pixel Chat could not bind to Essential. Open Essential once, then try again."
             else -> "Error: ${message.ifBlank { error.javaClass.simpleName }}"
         }
     }
@@ -347,7 +347,7 @@ class MainActivity : Activity() {
         return when {
             message.contains("Permission Denial", ignoreCase = true) ||
                 message.contains("requires", ignoreCase = true) ->
-                "Signature mismatch: install the matching signed Pixel Chat APK"
+                "Open Essential first, then retry"
             message.contains("Failed to bind", ignoreCase = true) ->
                 "Open Essential first, then retry"
             else -> "Open Essential first"

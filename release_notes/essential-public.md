@@ -5,9 +5,9 @@ repository format and updates the app sources, sample files, and release APKs.
 
 ## APK
 
-- GitHub Release `v1.0.12` asset `app-release.apk`: latest Essential Android app.
-- GitHub Release `v1.0.12` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK signed with the same certificate as Essential.
-- GitHub Release `v1.0.12` asset `essential-v1.0.12-source.zip`: explicit source zip for the latest source tree.
+- GitHub Release `v1.0.13` asset `app-release.apk`: latest Essential Android app.
+- GitHub Release `v1.0.13` asset `pixel_chat_app-release.apk`: Pixel Feature Chat release APK.
+- GitHub Release `v1.0.13` asset `essential-v1.0.13-source.zip`: explicit source zip for the latest source tree.
 
 ## Demo Code
 
@@ -50,14 +50,13 @@ and terms.
 ## 2026-05-12 Pixel Feature Chat Update
 
 - Added the buildable Android SDK / Pixel Feature Chat package to the public repo.
-- Kept Essential's signature-protected service permission and made same-certificate release signing a required check.
-- Added `scripts/verify_android_release_signatures.sh` to prevent Essential and Pixel Chat release APKs from being published with mismatched signing certificates.
+- Added the buildable Android SDK / Pixel Feature Chat package to the public repo.
 - Added Android Gradle wrapper files so a fresh GitHub checkout can sync and install from Android Studio without relying on untracked local files.
 
 ## 2026-05-13 Android Studio Build Repair
 
 - Pinned the public Android Gradle projects to Homebrew JDK 21 so a Mac with default JDK 25 can still sync and build from Android Studio.
-- Added release signing configuration to the main Essential APK so release assets install on Pixel devices with the same certificate as Pixel Feature Chat.
+- Added release signing configuration to the main Essential APK.
 - Bumped both APKs to version `1.0.11` / versionCode `11`.
 - Added automatic `flutter pub get` before Flutter Android Gradle compile tasks so Android Studio builds work from a fresh GitHub ZIP even when `.dart_tool/package_config.json` does not exist yet.
 - Added the same dependency preparation in Android Gradle settings so Flutter plugins are included during the first Android Studio sync/build.
@@ -70,3 +69,9 @@ and terms.
 - Removed the event-specific documentation folder so the repository reads as a normal Essential project.
 - Replaced visible app text that referred to a special build with regular product wording.
 - Renamed the default local release signing properties path to `~/.android/essential-release.properties`.
+
+## 2026-05-14 SDK Binding Update
+
+- Removed signing-certificate coupling from the Essential bound service so SDK apps can connect after adding the SDK and configuring the service component.
+- Updated Pixel Feature Chat and SDK documentation so connection guidance no longer depends on matching app signing keys.
+- Removed the old signing-certificate comparison script.

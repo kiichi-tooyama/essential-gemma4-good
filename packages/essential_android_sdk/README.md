@@ -2,7 +2,7 @@
 
 Essential の Android Bound Service / AIDL 実装を利用するための開発者向け SDK です。`EssentialClient` が非同期 API、ストリーミング、タイムアウト、キャンセル、モデル選択をまとめて提供します。
 
-This public package intentionally includes the SDK library and the Pixel Feature Chat app only. Essential's bound service is protected by a `signature` permission, so a release Pixel Chat APK must be signed with the same certificate as the Essential APK.
+The SDK is designed so an Android app can call Essential after adding the library and configuring the service component. The caller app does not need to share Essential's signing certificate.
 
 ## 含まれるもの
 
@@ -147,7 +147,7 @@ cd packages/essential_android_sdk
 ./gradlew :pixel_chat_app:installDebug
 ```
 
-Release 版 Essential APK と接続する Pixel Chat APK は、Essential と同じ証明書で署名してください。ローカルに次の properties がある場合、`assembleRelease` は同じ release key を使います。
+Release APK を作る場合、ローカルに次の properties があると `assembleRelease` はその release key を使います。SDK 接続はアプリの署名一致を前提にしません。
 
 ```text
 ~/.android/essential-release.properties
@@ -158,12 +158,4 @@ Release 版 Essential APK と接続する Pixel Chat APK は、Essential と同�
 ```bash
 export ESSENTIAL_RELEASE_KEYSTORE_PROPERTIES=/path/to/release.properties
 ./gradlew :pixel_chat_app:assembleRelease
-```
-
-Essential APK と Pixel Chat APK の署名一致は、公開 repo ルートから次で確認できます。
-
-```bash
-./scripts/verify_android_release_signatures.sh \
-  /path/to/essential.apk \
-  packages/essential_android_sdk/pixel_chat_app/build/outputs/apk/release/pixel_chat_app-release.apk
 ```
